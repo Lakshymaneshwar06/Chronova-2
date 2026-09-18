@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chronova | Dual Event Portal & Study Material Hub</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              cyan: '#00f2fe',
+              violet: '#8b5cf6',
+              emerald: '#10b981',
+              amber: '#f6ad55'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body class="mode-events selection:bg-cyan-500 selection:text-slate-950">
+
+  <!-- Dynamic Ambient Mesh Background -->
+  <div class="bg-mesh">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- Toast Notification Stack Container -->
+  <div id="toastContainer"></div>
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="glass-nav sticky top-0 z-40 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3 cursor-pointer select-none" onclick="ChronovaApp.setMode('events')">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 via-indigo-600 to-violet-500 p-0.5 shadow-lg shadow-cyan-500/20 flex items-center justify-center">
+          <div class="w-full h-full bg-[#090d16] rounded-[14px] flex items-center justify-center text-cyan-300">
+            <i data-lucide="orbit" class="w-6 h-6 animate-spin-slow"></i>
+          </div>
+        </div>
+        <div>
+          <span class="text-xl font-black tracking-tight text-white font-display flex items-center gap-1">
+            CHRONOVA <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">2.0</span>
+          </span>
+          <span class="text-[11px] text-slate-400 block -mt-1 font-medium">Campus Events & Academic Hub</span>
+        </div>
+      </div>
+
+      <!-- DUAL-MODE / MULTI-MODE PERSISTENT PILL TOGGLE -->
+      <div class="hidden md:flex items-center">
+        <div class="mode-toggle-pill relative">
+          <div id="modeToggleSlider" class="mode-toggle-slider"></div>
+
+          <button onclick="ChronovaApp.setMode('events')" data-mode="events" class="mode-toggle-btn active">
+            <i data-lucide="sparkles" class="w-4 h-4 text-cyan-300"></i>
+            <span>Event Mode</span>
+          </button>
+
+          <button onclick="ChronovaApp.setMode('study')" data-mode="study" class="mode-toggle-btn">
+            <i data-lucide="book-open" class="w-4 h-4 text-violet-300"></i>
+            <span>Study Hub</span>
+          </button>
+
+          <button onclick="ChronovaApp.setMode('clubs')" data-mode="clubs" class="mode-toggle-btn">
+            <i data-lucide="users" class="w-4 h-4 text-emerald-300"></i>
+            <span>Club Directory</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SEARCH BAR & AUTH CONTROLS -->
+      <div class="flex items-center gap-3">
+        
+        <!-- Quick Search -->
+        <div class="relative hidden sm:block w-48 lg:w-64">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input type="text" id="globalSearchInput" placeholder="Search events, notes... [/]" 
+                 class="glass-input w-full pl-9 pr-8 py-2 rounded-xl text-xs" />
+          <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-500 bg-slate-800 px-1 rounded border border-white/10">/</span>
+        </div>
+
+        <!-- Auth / User Avatar & Bookmarks button -->
+        <div id="navAuthContainer">
+          <!-- Populated dynamically by ChronovaApp.renderHeaderAuth() -->
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Mobile Sub-Navigation for Mode Toggle -->
+    <div class="md:hidden border-t border-white/5 px-4 py-2.5 bg-slate-950/60 flex items-center justify-around">
+      <button onclick="ChronovaApp.setMode('events')" class="text-xs font-semibold flex items-center gap-1.5 py-1 px-2.5 rounded-lg text-cyan-400">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Events
+      </button>
+      <button onclick="ChronovaApp.setMode('study')" class="text-xs font-semibold flex items-center gap-1.5 py-1 px-2.5 rounded-lg text-slate-400 hover:text-violet-400">
+        <i data-lucide="book-open" class="w-3.5 h-3.5"></i> Study Hub
+      </button>
+      <button onclick="ChronovaApp.setMode('clubs')" class="text-xs font-semibold flex items-center gap-1.5 py-1 px-2.5 rounded-lg text-slate-400 hover:text-emerald-400">
+        <i data-lucide="users" class="w-3.5 h-3.5"></i> Clubs
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN WRAPPER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    
+    <!-- HERO SECTION (Dynamic Content based on Mode) -->
+    <section class="relative glass-panel rounded-3xl p-8 sm:p-12 mb-10 overflow-hidden border border-white/10 shadow-2xl">
+      <!-- Ambient Glow Behind Hero -->
+      <div class="absolute -right-20 -top-20 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="relative z-10 max-w-3xl">
+        <div id="heroModeBadge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 mb-4">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-cyan-400"></i> CAMPUS EVENT PORTAL
+        </div>
+
+        <h1 id="heroTitle" class="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.15] mb-4 font-display">
+          Unleash Your <span class="accent-gradient-text">Campus Energy</span> & Compete
+        </h1>
+
+        <p id="heroSubtitle" class="text-slate-300 text-sm sm:text-base leading-relaxed mb-8 max-w-2xl">
+          Discover hackathons, live robotics races, developer workshops, and cultural galas. Register in one click with verified digital passes.
+        </p>
+
+        <!-- Dynamic Action Buttons -->
+        <div class="flex items-center gap-3 flex-wrap">
+          <button onclick="window.chronoBot.sendQuery('What are the most popular events?')" 
+                  class="accent-glow-btn text-slate-950 font-bold px-6 py-3 rounded-2xl text-xs sm:text-sm flex items-center gap-2">
+            <i data-lucide="compass" class="w-4 h-4"></i> Explore Spotlight
+          </button>
+
+          <button onclick="window.chronovaState.toggleChat(true)" 
+                  class="px-5 py-3 rounded-2xl text-xs sm:text-sm font-semibold bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-white/10 flex items-center gap-2 transition-all">
+            <i data-lucide="message-square" class="w-4 h-4 text-cyan-400"></i> Ask ChronoBot
+          </button>
+        </div>
+      </div>
+
+      <!-- Hero Real-Time Stats Row -->
+      <div id="heroStatsRow" class="mt-10 pt-8 border-t border-white/10 grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Populated dynamically by ChronovaApp.renderHeroStats() -->
+      </div>
+    </section>
+
+    <!-- FILTER & CONTROL BAR (Changes dynamically with mode) -->
+    <section class="glass-panel rounded-2xl p-4 sm:p-5 mb-8 border border-white/10 shadow-lg">
+      <div id="modeFilterControls">
+        <!-- Populated dynamically by ChronovaApp.renderFilterBar() -->
+      </div>
+    </section>
+
+    <!-- CARDS GRID CONTAINER -->
+    <section>
+      <div id="mainCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+        <!-- Populated dynamically with EventCard, StudyCard, or ClubCard -->
+      </div>
+    </section>
+
+    <!-- CALENDAR / TIMELINE PREVIEW SECTION (Visible in Event Mode) -->
+    <section id="timelineContainer" class="mt-4">
+      <!-- Populated dynamically by ChronovaComponents.renderTimelineSection() -->
+    </section>
+
+  </main>
+
+  <!-- FLOATING ADMIN ACTION BAR (Visible when logged in as Admin) -->
+  <div id="floatingAdminBar" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+    <div class="glass-panel px-5 py-3 rounded-full border border-amber-500/40 shadow-2xl flex items-center gap-3 bg-slate-950/90 backdrop-blur-2xl">
+      <span class="text-xs font-mono font-bold text-amber-400 flex items-center gap-1.5 pr-2 border-r border-white/10">
+        <i data-lucide="shield" class="w-4 h-4"></i> ADMIN CONSOLE
+      </span>
+
+      <button onclick="ChronovaApp.openCreateEventModal()" 
+              class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition-all">
+        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Post Event
+      </button>
+
+      <button onclick="ChronovaApp.openUploadMaterialModal()" 
+              class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-violet-600 hover:bg-violet-500 text-white flex items-center gap-1.5 shadow-md shadow-violet-600/20 transition-all">
+        <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i> Upload Notes
+      </button>
+
+      <button onclick="ChronovaComponents.showToast('Audit Log', '412 student registrations & 1,200 downloads logged this week.', 'info')" 
+              class="p-1.5 rounded-full text-slate-400 hover:text-white transition-colors" title="View Quick Audit">
+        <i data-lucide="activity" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- FLOATING CHATBOT WIDGET -->
+  <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    
+    <!-- Chatbot Window Drawer -->
+    <div id="chatbotWidget" class="chat-window hidden w-96 max-w-[calc(100vw-2rem)] h-[540px] max-h-[80vh] glass-panel rounded-3xl border border-cyan-500/30 shadow-2xl flex flex-col overflow-hidden mb-3 bg-slate-950/90 backdrop-blur-2xl">
+      
+      <!-- Chat Header -->
+      <div class="p-4 bg-slate-900/90 border-b border-white/10 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
+              <i data-lucide="bot" class="w-5 h-5"></i>
+            </div>
+            <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full"></div>
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-white flex items-center gap-1.5">
+              ChronoBot AI <span class="text-[10px] font-mono text-cyan-400 bg-cyan-950/60 px-1.5 py-0.2 rounded border border-cyan-500/20">Active</span>
+            </h3>
+            <span class="text-[10px] text-slate-400">Campus Query Assistant</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1">
+          <button onclick="window.chronovaState.clearChat()" 
+                  class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors" title="Clear Chat">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          </button>
+          <button onclick="window.chronovaState.toggleChat(false)" 
+                  class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors" title="Close Chat">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Chat Messages Scrollable Area -->
+      <div id="chatMessagesBody" class="flex-1 p-4 overflow-y-auto space-y-4">
+        <!-- Rendered dynamically by ChronoBot.renderMessages() -->
+      </div>
+
+      <!-- Quick Suggestion Chips Carousel -->
+      <div class="px-3 py-2 border-t border-white/5 bg-slate-950/40">
+        <div id="chatQuickChips" class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          <!-- Rendered dynamically by ChronoBot.renderChips() -->
+        </div>
+      </div>
+
+      <!-- Chat Input Area -->
+      <div class="p-3 bg-slate-900/80 border-t border-white/10 flex items-center gap-2">
+        <input type="text" id="chatInput" placeholder="Ask about events, notes, clubs..." 
+               class="glass-input flex-1 px-3.5 py-2.5 rounded-xl text-xs" />
+        <button onclick="window.chronoBot.handleUserSend()" 
+                class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-cyan-500/20 transition-transform active:scale-95">
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Floating Trigger Button -->
+    <button onclick="window.chronovaState.toggleChat()" 
+            class="relative w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 p-0.5 shadow-2xl shadow-cyan-500/30 hover:scale-105 active:scale-95 transition-all flex items-center justify-center group"
+            title="Ask ChronoBot">
+      <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center text-cyan-300 group-hover:bg-slate-900 transition-colors">
+        <i data-lucide="bot" class="w-6 h-6 animate-pulse-glow"></i>
+      </div>
+
+      <!-- Notification pulse badge -->
+      <span id="chatBadgePulse" class="absolute -top-1 -right-1 flex h-4 w-4">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-4 w-4 bg-cyan-500 text-[9px] font-bold text-slate-950 items-center justify-center">1</span>
+      </span>
+    </button>
+
+  </div>
+
+  <!-- ==================== ALL MODALS ==================== -->
+
+  <!-- 1. Event Details Modal -->
+  <div id="eventDetailsModal" class="chronova-modal hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 shadow-2xl" 
+         id="eventDetailsModalContent">
+      <!-- Populated dynamically by ChronovaApp.openEventDetails() -->
+    </div>
+  </div>
+
+  <!-- 2. Event Registration Form Modal -->
+  <div id="eventRegisterModal" class="chronova-modal hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-md rounded-3xl border border-white/10 shadow-2xl" 
+         id="eventRegisterModalContent">
+      <!-- Populated dynamically by ChronovaApp.showRegisterFormModal() -->
+    </div>
+  </div>
+
+  <!-- 3. Ticket Pass Modal -->
+  <div id="ticketModal" class="chronova-modal hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-lg rounded-3xl border border-white/10 shadow-2xl" 
+         id="ticketModalContent">
+      <!-- Populated dynamically by ChronovaApp.showTicketModal() -->
+    </div>
+  </div>
+
+  <!-- 4. Study Preview Modal -->
+  <div id="studyPreviewModal" class="chronova-modal hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 shadow-2xl" 
+         id="studyPreviewModalContent">
+      <!-- Populated dynamically by ChronovaApp.openStudyPreview() -->
+    </div>
+  </div>
+
+  <!-- 5. Club Details Modal -->
+  <div id="clubDetailsModal" class="chronova-modal hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 shadow-2xl" 
+         id="clubDetailsModalContent">
+      <!-- Populated dynamically by ChronovaApp.openClubDetails() -->
+    </div>
+  </div>
+
+  <!-- 6. Student & Admin Login Modal -->
+  <div id="authModal" class="chronova-modal hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-md rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="p-6 pb-4 border-b border-white/10 flex items-center justify-between">
+        <div>
+          <span class="text-xs font-mono uppercase text-cyan-400 block font-bold">CHRONOVA AUTH PORTAL</span>
+          <h2 class="text-xl font-black text-white">Sign In to Continue</h2>
+        </div>
+        <button onclick="ChronovaApp.closeModal('authModal')" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+
+      <!-- Student vs Admin Tabs -->
+      <div class="px-6 pt-4 pb-2">
+        <div class="grid grid-cols-2 p-1 bg-slate-900/80 rounded-xl border border-white/10 text-xs">
+          <button id="authTabStudent" onclick="ChronovaApp.setAuthModalTab('student')" 
+                  class="py-2 rounded-lg font-bold transition-all bg-cyan-500 text-slate-950">
+            Student Login
+          </button>
+          <button id="authTabAdmin" onclick="ChronovaApp.setAuthModalTab('admin')" 
+                  class="py-2 rounded-lg font-bold transition-all text-slate-400 hover:text-white">
+            Admin Portal
+          </button>
+        </div>
+      </div>
+
+      <!-- Student Form -->
+      <div id="authStudentForm" class="p-6 pt-2 space-y-4 text-xs">
+        <div class="p-3 rounded-xl bg-cyan-950/30 border border-cyan-500/20 flex items-center justify-between">
+          <div class="text-[11px] text-slate-300">
+            <span class="font-bold text-white block">Demo Student:</span>
+            student@chronova.edu / student123
+          </div>
+          <button onclick="ChronovaApp.fillDemoCredentials('student')" 
+                  class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-cyan-500 text-slate-950">
+            Auto-Fill
+          </button>
+        </div>
+
+        <form onsubmit="ChronovaApp.handleLoginSubmit(event, 'student')" class="space-y-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Campus Email</label>
+            <input type="email" id="studentEmail" required placeholder="student@chronova.edu" 
+                   class="glass-input w-full px-3.5 py-2.5 rounded-xl" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Password</label>
+            <input type="password" id="studentPassword" required placeholder="••••••••" 
+                   class="glass-input w-full px-3.5 py-2.5 rounded-xl" />
+          </div>
+          <button type="submit" class="w-full py-3 rounded-xl font-bold text-white accent-glow-btn text-sm flex items-center justify-center gap-2 mt-2">
+            <i data-lucide="log-in" class="w-4 h-4"></i> Sign In as Student
+          </button>
+        </form>
+      </div>
+
+      <!-- Admin Form -->
+      <div id="authAdminForm" class="hidden p-6 pt-2 space-y-4 text-xs">
+        <div class="p-3 rounded-xl bg-amber-950/30 border border-amber-500/20 flex items-center justify-between">
+          <div class="text-[11px] text-slate-300">
+            <span class="font-bold text-amber-300 block">Demo Admin:</span>
+            admin@chronova.edu / admin123
+          </div>
+          <button onclick="ChronovaApp.fillDemoCredentials('admin')" 
+                  class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500 text-slate-950">
+            Auto-Fill
+          </button>
+        </div>
+
+        <form onsubmit="ChronovaApp.handleLoginSubmit(event, 'admin')" class="space-y-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Admin Staff Email</label>
+            <input type="email" id="adminEmail" required placeholder="admin@chronova.edu" 
+                   class="glass-input w-full px-3.5 py-2.5 rounded-xl" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Admin Security Passcode</label>
+            <input type="password" id="adminPassword" required placeholder="••••••••" 
+                   class="glass-input w-full px-3.5 py-2.5 rounded-xl" />
+          </div>
+          <button type="submit" class="w-full py-3 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/20 text-sm flex items-center justify-center gap-2 mt-2">
+            <i data-lucide="shield-check" class="w-4 h-4"></i> Unlock Admin Console
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 7. Admin Create Event Modal -->
+  <div id="adminCreateEventModal" class="chronova-modal hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-amber-500/30 shadow-2xl p-6 sm:p-8">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <span class="text-xs font-mono uppercase text-amber-400 block font-bold">Admin Publishing Tool</span>
+          <h2 class="text-xl font-bold text-white">Create & Publish Campus Event</h2>
+        </div>
+        <button onclick="ChronovaApp.closeModal('adminCreateEventModal')" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+
+      <form onsubmit="ChronovaApp.submitNewEvent(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Event Title</label>
+          <input type="text" id="adminEventTitle" required placeholder="e.g. ChronoAI Symposium 2026" class="glass-input w-full px-3.5 py-2.5 rounded-xl" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Category</label>
+            <select id="adminEventCategory" class="glass-input w-full px-3.5 py-2.5 rounded-xl bg-slate-900">
+              <option value="hackathons">Hackathon</option>
+              <option value="workshops">Workshop</option>
+              <option value="cultural">Cultural & Arts</option>
+              <option value="talks">Guest Talk</option>
+              <option value="sports">Gaming & Sports</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Capacity</label>
+            <input type="number" id="adminEventCapacity" required value="200" class="glass-input w-full px-3.5 py-2.5 rounded-xl" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Date String</label>
+            <input type="text" id="adminEventDate" required placeholder="Nov 28, 2026" class="glass-input w-full px-3.5 py-2.5 rounded-xl" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Time</label>
+            <input type="text" id="adminEventTime" required placeholder="10:00 AM - 04:00 PM" class="glass-input w-full px-3.5 py-2.5 rounded-xl" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Venue / Room</label>
+            <input type="text" id="adminEventVenue" required placeholder="Turing Hall A" class="glass-input w-full px-3.5 py-2.5 rounded-xl" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Entry Price</label>
+            <input type="text" id="adminEventPrice" value="Free" class="glass-input w-full px-3.5 py-2.5 rounded-xl" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Brief Description</label>
+          <textarea id="adminEventDesc" rows="3" required placeholder="Provide an overview for students..." class="glass-input w-full px-3.5 py-2.5 rounded-xl"></textarea>
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm flex items-center justify-center gap-2">
+          <i data-lucide="check-circle-2" class="w-4 h-4"></i> Publish Event Live
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 8. Admin Upload Material Modal -->
+  <div id="adminUploadModal" class="chronova-modal hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div class="glass-panel w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-violet-500/30 shadow-2xl p-6 sm:p-8">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <span class="text-xs font-mono uppercase text-violet-400 block font-bold">Faculty & Admin Resource Hub</span>
+          <h2 class="text-xl font-bold text-white">Upload New Study Material</h2>
+        </div>
+        <button onclick="ChronovaApp.closeModal('adminUploadModal')" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+
+      <form onsubmit="ChronovaApp.submitNewMaterial(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Resource Title</label>
+          <input type="text" id="adminMatTitle" required placeholder="e.g. Cloud Computing & Distributed Systems Unit 1-4" class="glass-input w-full px-3.5 py-2.5 rounded-xl" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Course Code</label>
+            <input type="text" id="adminMatCode" required placeholder="CS602" class="glass-input w-full px-3.5 py-2.5 rounded-xl font-mono" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Semester</label>
+            <select id="adminMatSem" class="glass-input w-full px-3.5 py-2.5 rounded-xl bg-slate-900">
+              <option value="1">Sem 1</option>
+              <option value="2">Sem 2</option>
+              <option value="3">Sem 3</option>
+              <option value="4">Sem 4</option>
+              <option value="5">Sem 5</option>
+              <option value="6" selected>Sem 6</option>
+              <option value="7">Sem 7</option>
+              <option value="8">Sem 8</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Department</label>
+            <select id="adminMatDept" class="glass-input w-full px-3.5 py-2.5 rounded-xl bg-slate-900">
+              <option value="Computer Science">Computer Science</option>
+              <option value="AI & Data Science">AI & Data Science</option>
+              <option value="Mathematics">Mathematics</option>
+              <option value="Electronics & Comm">Electronics</option>
+              <option value="Information Technology">Information Tech</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Resource Type</label>
+            <select id="adminMatType" class="glass-input w-full px-3.5 py-2.5 rounded-xl bg-slate-900">
+              <option value="notes">Lecture Notes</option>
+              <option value="cheatsheet">Cheat Sheet</option>
+              <option value="questionbank">Question Bank</option>
+              <option value="labmanual">Lab Manual</option>
+              <option value="video">Video Masterclass</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">File Format</label>
+            <select id="adminMatFormat" class="glass-input w-full px-3.5 py-2.5 rounded-xl bg-slate-900">
+              <option value="PDF">PDF</option>
+              <option value="ZIP">ZIP</option>
+              <option value="DOCX">DOCX</option>
+              <option value="MP4">MP4</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Author / Faculty</label>
+            <input type="text" id="adminMatAuthor" placeholder="Dr. S. K. Gupta" class="glass-input w-full px-3.5 py-2.5 rounded-xl" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Description & Scope</label>
+          <textarea id="adminMatDesc" rows="3" required placeholder="Overview of chapters and examination importance..." class="glass-input w-full px-3.5 py-2.5 rounded-xl"></textarea>
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-xl font-bold bg-violet-600 hover:bg-violet-500 text-white text-sm flex items-center justify-center gap-2">
+          <i data-lucide="upload-cloud" class="w-4 h-4"></i> Upload & Verify Resource
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 9. Bookmarks & Registered Drawer -->
+  <div id="bookmarksDrawer" class="chronova-modal hidden fixed inset-0 z-50 flex items-center justify-end p-0 bg-black/70 backdrop-blur-sm">
+    <div class="glass-panel w-full max-w-md h-full overflow-y-auto border-l border-white/10 shadow-2xl p-6 flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+          <div class="flex items-center gap-2">
+            <i data-lucide="bookmark" class="w-5 h-5 text-amber-400"></i>
+            <h3 class="text-base font-bold text-white">My Campus Locker</h3>
+          </div>
+          <button onclick="ChronovaApp.closeModal('bookmarksDrawer')" class="text-slate-400 hover:text-white">✕</button>
+        </div>
+
+        <div id="bookmarksDrawerContent">
+          <!-- Populated dynamically by ChronovaApp.openBookmarksDrawer() -->
+        </div>
+      </div>
+
+      <div class="pt-6 border-t border-white/10 text-center">
+        <p class="text-[11px] text-slate-500">Saved items are synced to your browser session & profile.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="mt-20 border-t border-white/10 glass-panel py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+        
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-violet-500 flex items-center justify-center text-slate-950 font-black text-sm">
+            C
+          </div>
+          <div>
+            <span class="text-sm font-bold text-white tracking-wider">CHRONOVA PLATFORM</span>
+            <span class="text-[11px] text-slate-500 block">Unified Student Life & Knowledge Ecosystem</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-6 text-xs text-slate-400">
+          <button onclick="ChronovaApp.setMode('events')" class="hover:text-white transition-colors">Events</button>
+          <button onclick="ChronovaApp.setMode('study')" class="hover:text-white transition-colors">Study Hub</button>
+          <button onclick="ChronovaApp.setMode('clubs')" class="hover:text-white transition-colors">Clubs</button>
+          <button onclick="ChronovaApp.openAuthModal('student')" class="hover:text-white transition-colors">Student Log In</button>
+          <button onclick="ChronovaApp.openAuthModal('admin')" class="hover:text-amber-400 transition-colors">Admin Portal</button>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs text-emerald-400 font-mono">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Chronova Cloud Services • All Systems Operational</span>
+        </div>
+
+      </div>
+
+      <div class="mt-8 pt-6 border-t border-white/5 text-center text-xs text-slate-500">
+        &copy; 2026 Chronova. Crafted for students, clubs, and faculty.
+      </div>
+    </div>
+  </footer>
+
+  <!-- JAVASCRIPT APPLICATION SUITE -->
+  <script src="js/data.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/chatbot.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
